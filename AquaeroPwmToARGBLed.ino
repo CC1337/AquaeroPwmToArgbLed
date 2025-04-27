@@ -70,9 +70,9 @@ void dumpColors() {
 }
 
 void readNewColors() {
-  color_r_new = (byte)min(getDutyCycle(LED_INPUT_R_PIN) * aquaeroMaxValueMultiplier, 255.0);
-  color_g_new = (byte)min(getDutyCycle(LED_INPUT_G_PIN) * aquaeroMaxValueMultiplier, 255.0);
-  color_b_new = (byte)min(getDutyCycle(LED_INPUT_B_PIN) * aquaeroMaxValueMultiplier, 255.0);
+  color_r_new = getScaledColor(LED_INPUT_R_PIN, color_r);
+  color_g_new = getScaledColor(LED_INPUT_G_PIN, color_g);
+  color_b_new = getScaledColor(LED_INPUT_B_PIN, color_b);
 }
 
 void fillLEDs()
@@ -88,11 +88,35 @@ byte getBlendedColor(byte newColor, byte oldColor) {
   if (newColor == oldColor || !ENABLE_CROSSFADING)
     return newColor;
 
-  byte modifier = (byte)max((float)abs(newColor - oldColor)/15.0, 1.0);
+  int modifier = (byte)max((float)abs(newColor - oldColor)/15.0, 1.0);
+
+  Serial.print("        [ old ");
+  Serial.print(oldColor);
+  Serial.print(" | new ");
+  Serial.print(newColor);
+  Serial.print(" | mod ");
+  Serial.println(modifier);
+  
   if (newColor < oldColor)
-    return oldColor - modifier;
+    return (byte)max((int)oldColor - modifier, 0);
   else
-    return oldColor + modifier;
+    return (byte)min((int)oldColor + modifier, 255);
+}
+
+byte getScaledColor(int inputPin, byte oldColor) {
+  float dutyCycle = getDutyCycle(inputPin);
+  if (dutyCycle > 1)
+    return oldColor;
+  int newColor = min(dutyCycle * aquaeroMaxValueMultiplier, 255.0);
+  Serial.print("      >> DC ");
+  Serial.print(dutyCycle);
+  Serial.print(" >> Multi ");
+  Serial.print(dutyCycle * aquaeroMaxValueMultiplier);
+  Serial.print(" >> NC ");
+  Serial.println(newColor);
+  if (newColor < 0 || newColor > 255)
+    return oldColor;
+  return newColor;
 }
 
 float getDutyCycle(int inputPin) {
@@ -101,9 +125,22 @@ float getDutyCycle(int inputPin) {
   
   unsigned long lowTime = pulseIn(inputPin, LOW, PULSE_TIMEOUT);
   renderLeds(); // Render in between long-running operation for less stutter in crossfades
+
+  if(highTime > 50 && lowTime == 0 || highTime == 0 && lowTime > 50)
+    return 2;
   
   unsigned long cycleTime = max(highTime + lowTime, 1);
   float dutyCycle = (float)highTime / float(cycleTime);
+
+  Serial.print("    [ P ");
+  Serial.print(inputPin);
+  Serial.print(" | H ");
+  Serial.print(highTime);
+  Serial.print(" | L ");
+  Serial.print(lowTime);
+  Serial.print(" | CoD ");
+  Serial.print(dutyCycle);
+  Serial.println(" ]");
   
   return dutyCycle;
 }
