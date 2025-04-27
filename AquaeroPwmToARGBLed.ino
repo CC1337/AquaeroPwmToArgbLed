@@ -90,13 +90,6 @@ byte getBlendedColor(byte newColor, byte oldColor) {
 
   int modifier = (byte)max((float)abs(newColor - oldColor)/15.0, 1.0);
 
-  Serial.print("        [ old ");
-  Serial.print(oldColor);
-  Serial.print(" | new ");
-  Serial.print(newColor);
-  Serial.print(" | mod ");
-  Serial.println(modifier);
-  
   if (newColor < oldColor)
     return (byte)max((int)oldColor - modifier, 0);
   else
@@ -108,12 +101,7 @@ byte getScaledColor(int inputPin, byte oldColor) {
   if (dutyCycle > 1)
     return oldColor;
   int newColor = min(dutyCycle * aquaeroMaxValueMultiplier, 255.0);
-  Serial.print("      >> DC ");
-  Serial.print(dutyCycle);
-  Serial.print(" >> Multi ");
-  Serial.print(dutyCycle * aquaeroMaxValueMultiplier);
-  Serial.print(" >> NC ");
-  Serial.println(newColor);
+
   if (newColor < 0 || newColor > 255)
     return oldColor;
   return newColor;
@@ -131,16 +119,6 @@ float getDutyCycle(int inputPin) {
   
   unsigned long cycleTime = max(highTime + lowTime, 1);
   float dutyCycle = (float)highTime / float(cycleTime);
-
-  Serial.print("    [ P ");
-  Serial.print(inputPin);
-  Serial.print(" | H ");
-  Serial.print(highTime);
-  Serial.print(" | L ");
-  Serial.print(lowTime);
-  Serial.print(" | CoD ");
-  Serial.print(dutyCycle);
-  Serial.println(" ]");
   
   return dutyCycle;
 }
